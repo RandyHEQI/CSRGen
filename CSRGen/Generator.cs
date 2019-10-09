@@ -10,6 +10,8 @@ using Org.BouncyCastle.Asn1.Pkcs;
 using System.Collections;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Crypto.Operators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Asn1.X9;
 
 namespace CSRGen
 {
@@ -82,16 +84,27 @@ namespace CSRGen
 
 
             //Key Generator
+            //ECKeyPairGenerator ecKeyPairGenerator = new ECKeyPairGenerator();
+            //ecKeyPairGenerator.Init(new KeyGenerationParameters(new SecureRandom(new CryptoApiRandomGenerator()), (int)rsaKeyLength));
+            //AsymmetricCipherKeyPair pair = ecKeyPairGenerator.GenerateKeyPair();
 
-            RsaKeyPairGenerator rsaKeyPairGenerator = new RsaKeyPairGenerator();
-            rsaKeyPairGenerator.Init(new KeyGenerationParameters(new SecureRandom(new CryptoApiRandomGenerator()), (int)rsaKeyLength));
-            AsymmetricCipherKeyPair pair = rsaKeyPairGenerator.GenerateKeyPair();
+            X9ECParameters curve = ECNamedCurveTable.GetByName("secp256k1");
+            ECDomainParameters ecParam = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed());
+            ECKeyPairGenerator ecKeyPairGenerator = new ECKeyPairGenerator();
+            ecKeyPairGenerator.Init(new ECKeyGenerationParameters(ecParam, new SecureRandom()));
+            AsymmetricCipherKeyPair pair = ecKeyPairGenerator.GenerateKeyPair();
+
+            //RsaKeyPairGenerator rsaKeyPairGenerator = new RsaKeyPairGenerator();
+            //rsaKeyPairGenerator.Init(new KeyGenerationParameters(new SecureRandom(new CryptoApiRandomGenerator()), (int)rsaKeyLength));
+            //AsymmetricCipherKeyPair pair = rsaKeyPairGenerator.GenerateKeyPair();
 
             //CSR Generator
 
-            Asn1SignatureFactory signatureFactory = new Asn1SignatureFactory(signatureAlgorithmStr, pair.Private);
+            //Asn1SignatureFactory signatureFactory = new Asn1SignatureFactory(signatureAlgorithmStr, pair.Private);
+            Asn1SignatureFactory signatureFactory = new Asn1SignatureFactory("SHA256WITHECDSA", pair.Private);
 
             Pkcs10CertificationRequest csr = new Pkcs10CertificationRequest(signatureFactory, subject, pair.Public, null, pair.Private);
+
 
 
             /***************************
